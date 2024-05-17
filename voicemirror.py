@@ -19,7 +19,7 @@ C7 = 2093.00  # Frequency of C7
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-CHUNK = 2048  # Increased chunk size
+CHUNK = 4096  # Increased chunk size
 
 # Initialize PyAudio
 p = pyaudio.PyAudio()
@@ -48,6 +48,9 @@ ax.set_xlim(100, 1000)  # Adjusted range for F1 to fit typical vocal range
 ax.set_ylim(500, 3000)  # Adjusted range for F2 to fit typical vocal range
 ax.set_xlabel('F1 (Hz)')
 ax.set_ylabel('F2 (Hz)')
+ax.tick_params(axis='both', which='both', labelsize=10)
+
+# Use ScalarFormatter to avoid scientific notation
 ax.xaxis.set_major_formatter(ScalarFormatter())
 ax.yaxis.set_major_formatter(ScalarFormatter())
 ax.xaxis.set_minor_formatter(ScalarFormatter())
@@ -68,7 +71,7 @@ def add_piano_labels(ax):
         ax.axvline(freq, color='grey', linestyle='--', linewidth=0.5)
         ax.axhline(freq, color='grey', linestyle='--', linewidth=0.5)
         ax.text(freq, 3100, label, ha='center', va='bottom', fontsize=10, color='grey')
-        ax.text(1005, freq, label, ha='left', va='center', fontsize=10, color='grey')
+        ax.text(1020, freq, label, ha='right', va='center', fontsize=10, color='grey')
 
 # Draw piano key labels
 add_piano_labels(ax)
@@ -93,13 +96,8 @@ def get_formants(audio_sample, rate):
 
 def get_harmonics(audio_sample, rate):
     audio_sample = audio_sample.astype(np.float32)
-    pitches, magnitudes = librosa.core.piptrack(y=audio_sample, sr=rate)
-    harmonics = []
-    for t in range(pitches.shape[1]):
-        index = magnitudes[:, t].argmax()
-        pitch = pitches[index, t]
-        if pitch > 0:
-            harmonics.append(pitch)
+    pitches, _, _ = librosa.pyin(y=audio_sample, sr=rate, fmin=librosa.note_to_hz('C2'), fmax=librosa.note_to_hz('C7'))
+    harmonics = pitches[~np.isnan(pitches)]
     if len(harmonics) > 0:
         H1 = np.median(harmonics)
         H2 = 2 * H1  # Approximate H2 as twice H1
